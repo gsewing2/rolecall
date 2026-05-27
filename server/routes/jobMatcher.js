@@ -3,6 +3,13 @@ import fetch from "node-fetch";
 
 const client = new Anthropic();
 
+function extractJSON(text) {
+  const stripped = text.replace(/```json|```/g, "").trim();
+  const match = stripped.match(/(\{[\s\S]*\})/);
+  if (!match) throw new Error(`No JSON object found in response: ${stripped.slice(0, 100)}`);
+  return JSON.parse(match[1]);
+}
+
 /**
  * Fetches real job listings from JSearch (Google for Jobs aggregator).
  * Runs multiple targeted queries to maximize coverage.
@@ -180,8 +187,7 @@ Return ONLY valid JSON:
     .map((b) => b.text)
     .join("");
 
-  const clean = text.replace(/```json|```/g, "").trim();
-  const parsed = JSON.parse(clean);
+  const parsed = extractJSON(text);
 
   // Merge back the apply URLs from original listings where Claude may have lost them
   const listingMap = Object.fromEntries(listings.map((j) => [j.id, j]));

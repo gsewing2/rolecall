@@ -2,6 +2,13 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
+function extractJSON(text) {
+  const stripped = text.replace(/```json|```/g, "").trim();
+  const match = stripped.match(/(\{[\s\S]*\})/);
+  if (!match) throw new Error(`No JSON object found in response: ${stripped.slice(0, 100)}`);
+  return JSON.parse(match[1]);
+}
+
 /**
  * Parses raw resume text into a structured candidate profile.
  * This runs once at the start and is used by all downstream matching logic.
@@ -59,8 +66,7 @@ Extract and return ONLY valid JSON, no markdown:
     .map((b) => b.text)
     .join("");
 
-  const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  return extractJSON(text);
 }
 
 /**
@@ -115,6 +121,5 @@ Adjust match_weights based on the candidate's situation — e.g. if they're tran
     .map((b) => b.text)
     .join("");
 
-  const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean);
+  return extractJSON(text);
 }

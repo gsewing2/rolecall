@@ -6,6 +6,13 @@ import Anthropic from "@anthropic-ai/sdk";
 const router = express.Router();
 const client = new Anthropic();
 
+function extractJSON(text) {
+  const stripped = text.replace(/```json|```/g, "").trim();
+  const match = stripped.match(/(\{[\s\S]*\})/);
+  if (!match) throw new Error(`No JSON object found in response: ${stripped.slice(0, 100)}`);
+  return JSON.parse(match[1]);
+}
+
 /**
  * POST /api/jobs
  * Full pipeline: parse resume → align preferences → fetch listings → score & rank
@@ -174,8 +181,7 @@ Return JSON only:
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-    const clean = text.replace(/```json|```/g, "").trim();
-    res.json(JSON.parse(clean));
+    res.json(extractJSON(text));
   } catch (err) {
     res.status(500).json({ error: "Checklist generation failed." });
   }
@@ -217,8 +223,7 @@ Return ONLY valid JSON:
   });
 
   const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-  const clean = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(clean).jobs;
+  return extractJSON(text).jobs;
 }
 
 export default router;
